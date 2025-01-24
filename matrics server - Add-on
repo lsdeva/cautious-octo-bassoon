@@ -1,0 +1,26 @@
+##  matrics server - Add-on
+aws eks create-addon --cluster-name my-eks-cluster  --addon-name metrics-server
+
+#### to check the manifest
+kubectl edit deployment metrics-server -n kube-system
+
+### patch the manifest for 10251 port to cater fargate
+kubectl patch deployment metrics-server -n kube-system --type='json' -p='[
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/containers/0/args/0",
+    "value": "--secure-port=10251"
+  },
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/containers/0/ports/0/containerPort",
+    "value": 10251
+  }
+]'
+
+#### check patched version
+kubectl get deployment metrics-server -n kube-system -o yaml | grep -A 5 "args"
+kubectl get deployment metrics-server -n kube-system -o yaml | grep -A 5 "containerPort"
+
+kubectl rollout restart deployment metrics-server -n kube-system
+kubectl top nodes
